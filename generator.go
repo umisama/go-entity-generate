@@ -196,46 +196,49 @@ func (p *structProperty) createInterface() string {
 
 func getStructTypes(src *ast.File, struct_names []string) map[string]*ast.StructType {
 	structs := make(map[string]*ast.StructType)
-	fn := func(n ast.Node) bool {
-		if typspec, ok := n.(*ast.TypeSpec); ok {
-			if st, ok := typspec.Type.(*ast.StructType); ok {
-				name := typspec.Name.Name
-				if isAnyOne(name, struct_names) {
-					structs[name] = st
-				}
+
+declloop:
+	for _, decl := range src.Decls {
+		gendecl, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+
+		for _, spec := range gendecl.Specs {
+			typ, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue declloop
+			}
+			strtyp, ok := typ.Type.(*ast.StructType)
+			if !ok {
+				continue declloop
+			}
+			name := typ.Name.Name
+			if isAnyOne(name, struct_names) {
+				structs[name] = strtyp
 			}
 		}
-		return true
 	}
-
-	ast.Inspect(src, fn)
 	return structs
 }
 
 func getPackagePath(src *ast.File, sel string) string {
-	ret := ""
-	fn := func(n ast.Node) bool {
-		if typspec, ok := n.(*ast.ImportSpec); ok {
-			path := strings.Trim(typspec.Path.Value, "\"")
+	for _, imp := range src.Imports {
+		path := strings.Trim(imp.Path.Value, "\"")
 
-			name := ""
-			if typspec.Name != nil {
-				name = typspec.Name.String()
-			} else {
-				s := strings.Split(path, "/")
-				name = s[len(s)-1]
-			}
-
-			if name == sel {
-				ret = path
-				return false
-			}
+		name := ""
+		if imp.Name != nil {
+			name = imp.Name.String()
+		} else {
+			s := strings.Split(path, "/")
+			name = s[len(s)-1]
 		}
-		return true
-	}
 
-	ast.Inspect(src, fn)
-	return ret
+		if name == sel {
+			return path
+		}
+	}
+	return ""
 }
 
 func getPackageName(src *ast.File) string {
