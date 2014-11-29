@@ -73,10 +73,10 @@ func (m *Generator) Run() error {
 func (m *Generator) Output() ([]byte, error) {
 	ret := m.createHeader()
 	for _, prop := range m.props {
-		ret += "\n" + prop.createInterface()
+		ret += "\n\n" + prop.createInterface()
 		for i := 0; i < prop.len(); i++ {
-			ret += "\n" + prop.createGetter(i)
-			ret += "\n" + prop.createSetter(i)
+			ret += "\n\n" + prop.createGetter(i)
+			ret += "\n\n" + prop.createSetter(i)
 		}
 	}
 	return []byte(ret), nil

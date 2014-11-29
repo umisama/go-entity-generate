@@ -1,8 +1,8 @@
 package main
 
 const (
-	TMPL_HEADER = `// AUTO GENERATED
-package {{.package_name}}
+	TMPL_HEADER = `package {{.package_name}}
+
 import ({{range .imports}}
 	"{{.}}"{{end}}
 )`
