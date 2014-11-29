@@ -22,13 +22,18 @@ type Generator struct {
 }
 
 type structProperty struct {
-	Name   string
-	Fields []fieldProperty
+	Name    string
+	Fields  []fieldProperty
+	Methods []methodProperty
 }
 
 type fieldProperty struct {
 	Name string
 	Type string
+}
+
+type methodProperty struct {
+	Name string
 }
 
 func NewGenerator(input_file string, struct_names []string) (*Generator, error) {
@@ -61,7 +66,7 @@ func (m *Generator) Run() error {
 		m.props = append(m.props, m.NewStructProperty(name, astf, typ))
 	}
 
-	m.package_name = getPackageName(astf)
+	m.package_name = astf.Name.Name
 	return nil
 }
 
@@ -94,8 +99,9 @@ func (m *Generator) createHeader() string {
 
 func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.StructType) *structProperty {
 	p := &structProperty{
-		Name:   name,
-		Fields: make([]fieldProperty, 0),
+		Name:    name,
+		Fields:  make([]fieldProperty, 0),
+		Methods: make([]methodProperty, 0),
 	}
 
 	for _, field := range src.Fields.List {
@@ -126,6 +132,20 @@ func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.Stru
 			})
 			m.addImportPath(getPackagePath(file, sel.Name))
 		}
+	}
+
+	for _, decl := range file.Decls {
+		fndecl, ok := decl.(*ast.FuncDecl)
+		if !ok || fndecl.Recv == nil || len(fndecl.Recv.List) == 0 {
+			continue
+		}
+
+		if p.Name != fndecl.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name {
+			continue
+		}
+		p.Methods = append(p.Methods, methodProperty{
+			Name: fndecl.Name.String(),
+		})
 	}
 
 	return p
@@ -166,6 +186,12 @@ func (p *structProperty) createSetter(index int) string {
 		"field_name":     strings.TrimSuffix(f.Name, "Col"),
 		"type_name":      f.Type,
 		"field_realname": f.Name,
+	}
+
+	for _, v := range p.Methods {
+		if v.Name == "check"+tmpl_dat["field_name"] {
+			tmpl_dat["checkfunc"] = v.Name
+		}
 	}
 
 	buf := bytes.NewBuffer([]byte{})
@@ -219,6 +245,7 @@ declloop:
 			}
 		}
 	}
+
 	return structs
 }
 
@@ -239,10 +266,6 @@ func getPackagePath(src *ast.File, sel string) string {
 		}
 	}
 	return ""
-}
-
-func getPackageName(src *ast.File) string {
-	return src.Name.Name
 }
 
 func isAnyOne(src string, trg []string) bool {
