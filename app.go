@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -36,19 +39,42 @@ func appMain(c *cli.Context) {
 		fmt.Println("ERROR: " + err.Error())
 		return
 	}
-	output_buf, err := gen.Output()
+	out, err := gen.Output()
+	if err != nil {
+		fmt.Println("ERROR: " + err.Error())
+		return
+	}
+	fmted, err := gofmt(out)
+	if err != nil {
+		fmt.Println("ERROR: " + err.Error())
+		return
+	}
+	bytebuf, err := ioutil.ReadAll(fmted)
 	if err != nil {
 		fmt.Println("ERROR: " + err.Error())
 		return
 	}
 
-	err = ioutil.WriteFile(o, output_buf, 0666)
+	err = ioutil.WriteFile(o, bytebuf, 0666)
 	if err != nil {
 		fmt.Println("ERROR: " + err.Error())
 		return
 	}
 
 	return
+}
+
+func gofmt(in io.Reader) (io.Reader, error) {
+	out := bytes.NewBuffer([]byte{})
+	cmd := exec.Command("gofmt")
+	cmd.Stdout = out
+	cmd.Stdin = in
+
+	err := cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func outputFileName(input string) string {

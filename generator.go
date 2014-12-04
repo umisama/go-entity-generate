@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io"
 	"io/ioutil"
 	"strings"
 	"text/template"
@@ -70,7 +71,7 @@ func (m *Generator) Run() error {
 	return nil
 }
 
-func (m *Generator) Output() ([]byte, error) {
+func (m *Generator) Output() (io.Reader, error) {
 	ret := m.createHeader()
 	for _, prop := range m.props {
 		ret += "\n\n" + prop.createInterface()
@@ -79,7 +80,7 @@ func (m *Generator) Output() ([]byte, error) {
 			ret += "\n\n" + prop.createSetter(i)
 		}
 	}
-	return []byte(ret), nil
+	return bytes.NewBufferString(ret), nil
 }
 
 func (m *Generator) Input() ([]byte, error) {
