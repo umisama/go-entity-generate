@@ -22,5 +22,7 @@ func (m *{{.struct_name}}) Set{{.field_name}} (val {{.type_name}}) error {
 type {{.interface_name}} interface { {{range .fields}}
 	{{.field_name}}(){{.type_name}}
 	Set{{.field_name}}(val {{.type_name}}) error{{end}}
+	{{range .methods}}
+	{{.Name}}({{range .Params}}{{.}},{{end}})({{range .Results}}{{.}},{{end}}){{end}}
 }`
 )

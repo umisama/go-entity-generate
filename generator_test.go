@@ -15,7 +15,7 @@ func TestGenerator(t *testing.T) {
 		error           bool
 		import_packages []string
 		package_name    string
-		methods         []string
+		methods         []methodProperty
 	}
 
 	a := assert.New(t)
@@ -31,7 +31,7 @@ type TestEntity struct {
 			false,
 			[]string{},
 			"main",
-			[]string{},
+			[]methodProperty{},
 		}, {
 			[]byte(`package main
 import (
@@ -51,7 +51,7 @@ type TestEntity struct {
 			false,
 			[]string{"time", "github.com/coopernurse/gorp", "github.com/umisama/go-cvss"},
 			"main",
-			[]string{},
+			[]methodProperty{},
 		}, {
 			[]byte(`import "fmt"
 
@@ -62,7 +62,7 @@ type TestEntity struct {
 			true,
 			nil,
 			"",
-			[]string{},
+			[]methodProperty{},
 		}, {
 			[]byte(`package main
 import (
@@ -79,11 +79,11 @@ type TestEntity struct {
 	isNew		bool
 }
 
-func (t *TestEntity) checkTest(b string) bool {
+func (t *TestEntity) checkTest(b string) error {
 	return true
 }
 
-func (t *TestEntity) checkTest2(b string) bool {
+func (t *TestEntity) OtherFunc(b pkg.TheType) pkg.TheType {
 	return true
 }
 
@@ -94,7 +94,10 @@ func (t *OtherEntity) checkOtherTest(b string) bool {
 			false,
 			[]string{"time", "github.com/coopernurse/gorp", "github.com/umisama/go-cvss"},
 			"main",
-			[]string{"checkTest", "checkTest2"},
+			[]methodProperty{
+				{"checkTest", []string{"error"}, []string{"string"}},
+				{"OtherFunc", []string{"pkg.TheType"}, []string{"pkg.TheType"}},
+			},
 		},
 	}
 
@@ -108,8 +111,8 @@ func (t *OtherEntity) checkOtherTest(b string) bool {
 		if !c.error {
 			a.Equal(c.import_packages, gen.imports)
 			a.Equal(c.package_name, gen.package_name)
-			for key, name := range c.methods {
-				a.Equal(name, gen.props[0].Methods[key].Name)
+			for key, method := range c.methods {
+				a.Equal(method, gen.props[0].Methods[key])
 			}
 		}
 	}
@@ -144,7 +147,7 @@ func (m *TestStruct) SetField (val Type) error {
 				{"FieldCol", "Type"},
 			},
 			Methods: []methodProperty{
-				{"checkField"},
+				{"checkField", []string{"Type"}, []string{"error"}},
 			},
 		},
 		funcstr: `// AUTO GENERATED

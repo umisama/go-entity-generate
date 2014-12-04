@@ -34,7 +34,9 @@ type fieldProperty struct {
 }
 
 type methodProperty struct {
-	Name string
+	Name    string
+	Results []string
+	Params  []string
 }
 
 func NewGenerator(input_file string, struct_names []string) (*Generator, error) {
@@ -138,14 +140,35 @@ func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.Stru
 	for _, decl := range file.Decls {
 		fndecl, ok := decl.(*ast.FuncDecl)
 		if !ok || fndecl.Recv == nil || len(fndecl.Recv.List) == 0 {
-			continue
+			continue // not method
+		}
+		if p.Name != fndecl.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name {
+			continue // not for this type
 		}
 
-		if p.Name != fndecl.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name {
-			continue
+		name := fndecl.Name.String()
+		params, rets := []string{}, []string{}
+		for _, param := range fndecl.Type.Params.List {
+			switch expr := param.Type.(type) {
+			case *ast.Ident:
+				params = append(params, expr.Name)
+			case *ast.SelectorExpr:
+				params = append(params, expr.X.(*ast.Ident).Name+"."+expr.Sel.Name)
+			}
 		}
+		for _, ret := range fndecl.Type.Results.List {
+			switch expr := ret.Type.(type) {
+			case *ast.Ident:
+				rets = append(rets, expr.Name)
+			case *ast.SelectorExpr:
+				rets = append(rets, expr.X.(*ast.Ident).Name+"."+expr.Sel.Name)
+			}
+		}
+
 		p.Methods = append(p.Methods, methodProperty{
-			Name: fndecl.Name.String(),
+			Name:    name,
+			Results: rets,
+			Params:  params,
 		})
 	}
 
@@ -211,9 +234,17 @@ func (p *structProperty) createInterface() string {
 		}
 	}
 
+	methods := make([]methodProperty, 0)
+	for _, m := range p.Methods {
+		if !strings.HasPrefix(m.Name, "check") {
+			methods = append(methods, m)
+		}
+	}
+
 	tmpl_dat := map[string]interface{}{
 		"interface_name": strings.TrimSuffix(strings.Title(p.Name), "Entity"),
 		"fields":         fields,
+		"methods":        methods,
 	}
 
 	buf := bytes.NewBuffer([]byte{})
