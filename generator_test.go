@@ -16,6 +16,7 @@ func TestGenerator(t *testing.T) {
 		import_packages []string
 		package_name    string
 		methods         []methodProperty
+		struct_length   int
 	}
 
 	a := assert.New(t)
@@ -32,6 +33,7 @@ type TestEntity struct {
 			[]string{},
 			"main",
 			[]methodProperty{},
+			1,
 		}, {
 			[]byte(`package main
 import (
@@ -52,6 +54,7 @@ type TestEntity struct {
 			[]string{"time", "github.com/coopernurse/gorp", "github.com/umisama/go-cvss"},
 			"main",
 			[]methodProperty{},
+			3,
 		}, {
 			[]byte(`import "fmt"
 
@@ -63,6 +66,7 @@ type TestEntity struct {
 			nil,
 			"",
 			[]methodProperty{},
+			1,
 		}, {
 			[]byte(`package main
 import (
@@ -98,6 +102,7 @@ func (t *OtherEntity) checkOtherTest(b string) bool {
 				{"checkTest", []string{"error"}, []string{"string"}},
 				{"OtherFunc", []string{"fmt.TheType"}, []string{"fmt.TheType"}},
 			},
+			3,
 		},
 	}
 
@@ -114,6 +119,7 @@ func (t *OtherEntity) checkOtherTest(b string) bool {
 			for key, method := range c.methods {
 				a.Equal(method, gen.props[0].Methods[key])
 			}
+			a.Equal(c.struct_length, len(gen.props[0].Fields))
 		}
 	}
 }

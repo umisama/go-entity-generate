@@ -110,26 +110,26 @@ func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.Stru
 	for _, field := range src.Fields.List {
 		switch t := field.Type.(type) {
 		case fmt.Stringer:
-			p.Fields = append(p.Fields, fieldProperty{
+			p.appendField(fieldProperty{
 				Name: field.Names[0].Name,
 				Type: t.String(),
 			})
 		case *ast.ArrayType:
 			switch elem_t := t.Elt.(type) {
 			case *ast.SelectorExpr:
-				p.Fields = append(p.Fields, fieldProperty{
+				p.appendField(fieldProperty{
 					Name: field.Names[0].Name,
 					Type: elem_t.Sel.String(),
 				})
 			case *ast.Ident:
-				p.Fields = append(p.Fields, fieldProperty{
+				p.appendField(fieldProperty{
 					Name: field.Names[0].Name,
 					Type: elem_t.String(),
 				})
 			}
 		case *ast.SelectorExpr:
 			sel := t.X.(*ast.Ident)
-			p.Fields = append(p.Fields, fieldProperty{
+			p.appendField(fieldProperty{
 				Name: field.Names[0].Name,
 				Type: sel.Name + "." + t.Sel.Name,
 			})
@@ -167,7 +167,7 @@ func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.Stru
 			}
 		}
 
-		p.Methods = append(p.Methods, methodProperty{
+		p.appendMethod(methodProperty{
 			Name:    name,
 			Results: rets,
 			Params:  params,
@@ -252,6 +252,18 @@ func (p *structProperty) createInterface() string {
 	buf := bytes.NewBuffer([]byte{})
 	template.Must(template.New("tmpl").Parse(TMPL_INTERFACE)).Execute(buf, tmpl_dat)
 	return buf.String()
+}
+
+func (p *structProperty) appendField(d fieldProperty) {
+	if strings.ToUpper(string(d.Name[0])) != string(d.Name[0]) {
+		return
+	}
+
+	p.Fields = append(p.Fields, d)
+}
+
+func (p *structProperty) appendMethod(d methodProperty) {
+	p.Methods = append(p.Methods, d)
 }
 
 func getStructTypes(src *ast.File, struct_names []string) map[string]*ast.StructType {
