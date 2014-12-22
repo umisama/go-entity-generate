@@ -83,7 +83,7 @@ func (t *TestEntity) checkTest(b string) error {
 	return true
 }
 
-func (t *TestEntity) OtherFunc(b pkg.TheType) pkg.TheType {
+func (t *TestEntity) OtherFunc(b fmt.TheType) fmt.TheType {
 	return true
 }
 
@@ -92,11 +92,11 @@ func (t *OtherEntity) checkOtherTest(b string) bool {
 }`),
 			[]string{"TestEntity"},
 			false,
-			[]string{"time", "github.com/coopernurse/gorp", "github.com/umisama/go-cvss"},
+			[]string{"time", "github.com/coopernurse/gorp", "github.com/umisama/go-cvss", "fmt"},
 			"main",
 			[]methodProperty{
 				{"checkTest", []string{"error"}, []string{"string"}},
-				{"OtherFunc", []string{"pkg.TheType"}, []string{"pkg.TheType"}},
+				{"OtherFunc", []string{"fmt.TheType"}, []string{"fmt.TheType"}},
 			},
 		},
 	}

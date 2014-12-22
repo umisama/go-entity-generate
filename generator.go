@@ -154,6 +154,7 @@ func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.Stru
 				params = append(params, expr.Name)
 			case *ast.SelectorExpr:
 				params = append(params, expr.X.(*ast.Ident).Name+"."+expr.Sel.Name)
+				m.addImportPath(getPackagePath(file, expr.X.(*ast.Ident).Name))
 			}
 		}
 		for _, ret := range fndecl.Type.Results.List {
@@ -162,6 +163,7 @@ func (m *Generator) NewStructProperty(name string, file *ast.File, src *ast.Stru
 				rets = append(rets, expr.Name)
 			case *ast.SelectorExpr:
 				rets = append(rets, expr.X.(*ast.Ident).Name+"."+expr.Sel.Name)
+				m.addImportPath(getPackagePath(file, expr.X.(*ast.Ident).Name))
 			}
 		}
 
